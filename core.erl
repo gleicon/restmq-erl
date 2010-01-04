@@ -12,16 +12,9 @@ normalize(Key) ->
     Key.
 
 %% this is hackey, the most IFfy use of case/of
-queue_set_add(Client, Queue, LastId) ->
-  %%  case LastId of 
-  %%      1 ->
-            Queue_name = Queue ++ ":queue",
-            %%Ret = erldis:set(Client, <<"ALLQUEUES">>, list_to_bitstring(Queue_name)),
-            Ret = erldis_sets:add_element(list_to_bitstring(Queue_name), Client, <<"ALLQUEUES">>),
-            Ret.
-   %%     _ ->
-   %%         true
-   %% end.
+queue_set_add(Client, Queue) ->
+    Queue_name = Queue ++ ":queue",
+    erldis_sets:add_element(list_to_bitstring(Queue_name), Client, <<"ALLQUEUES">>).
 
 queue_unique_id(Client, Queue) ->
     Key = Queue ++ ":UUID",
@@ -35,7 +28,7 @@ queue_unique_id(Client, Queue) ->
 queue_add(Queue, Data) ->
     {ok, Client} = erldis:connect("localhost", 6379),
     {Queue, Id} = queue_unique_id(Client, Queue),
-    _ = queue_set_add(Client, Queue, Id),
+    _ = queue_set_add(Client, Queue),
     Obj_key = lists:append([Queue, [$:], integer_to_list(Id)]),
     Queue_name = Queue ++ ":queue",
     %%Lp = erldis:lpush(Client, list_to_bitstring(Queue_name), list_to_bitstring(Obj_key)),
@@ -114,30 +107,30 @@ queue_policy_get(Queue) ->
     erldis_client:stop(Client),
     {Queue, Ret}.
 
+%% tail family
+
 queue_tail(Queue) ->
     queue_tail(Queue, false, 10).
 
 queue_tail(Queue, Delete) ->
     queue_tail(Queue, Delete, 10).
 
-
-%%%% tail
-
 queue_tail(Queue, Delete, KeyNo) ->
-    %%queue_get(Queue, true/false),
     {ok, Client} = erldis:connect("localhost", 6379),
-    list:append(Ret, queue_get(Client, Queue, GetDel)),
+    Ret = queue_tail_acc(Client, Queue, Delete, [], KeyNo),
     erldis_client:stop(Client),
-    Ret.
-    {Queue, Delete, KeyNo}.
+    {Queue, Ret}.
 
-queue_tail_acc(Client, Queue, Delete, List, N) when N > 0->
-    queue_tail_acc(Client, Queue, Delete, List, N-1).
+queue_tail_acc(Client, Queue, Delete, List, N) when N > 0 ->
+    {_, _, L} = queue_get(Client, Queue, Delete),
+    L2 = List ++ L,
+    queue_tail_acc(Client, Queue, Delete, L2, N-1);
 
 queue_tail_acc(_, _, _, List, 0) ->
     List.
 
-%%%%
+%% tail family
+
 queue_count_elements(Queue) ->
     {Queue, 10}.
 
