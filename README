@@ -1,0 +1,5 @@
+Very initial port of restmq (http://github.com/gleicon/restmq) to Erlang.
+Dependends upon:
+
+- erlang
+- erldis: http://github.com/cstar/erldis/
