@@ -100,8 +100,7 @@ queue_all(Client) ->
 queue_getdel(Client, Queue) ->
     queue_get(Client, Queue, true).
 
-%% TODO: guard against values outside POLICY_[BROADCAST, ROUNDROBIN]
-queue_policy_set(Client, Queue, Policy) -> %%when Policy == ?POLICY_BROADCAST or Policy == ?POLICY_ROUNDROBIN ->
+queue_policy_set(Client, Queue, Policy) when Policy =:= ?POLICY_BROADCAST; Policy == ?POLICY_ROUNDROBIN ->
     Queue_policy = Queue ++ ":queuepolicy",
     {Queue, Policy, erldis:set(Client, list_to_bitstring(Queue_policy), list_to_bitstring([Policy]))}.
 
